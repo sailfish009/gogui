@@ -547,6 +547,11 @@ public class GoGuiActions
             public void actionPerformed(ActionEvent e) {
                 m_goGui.actionShowTree(); } };
 
+    public final GuiAction m_actionInvertColor =
+        new GuiAction(i18n("ACT_INVERT_COLOR"), null, KeyEvent.VK_F10, FUNCTION_KEY) {
+            public void actionPerformed(ActionEvent e) {
+                m_goGui.actionInvertColor(); } };
+
     public final GuiAction m_actionShowVariationsChildren =
         new GuiAction(i18n("ACT_VARIATION_LABELS_CHILDREN")) {
             public void actionPerformed(ActionEvent e) {

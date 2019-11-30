@@ -66,6 +66,7 @@ import net.sf.gogui.go.GoColor;
 import static net.sf.gogui.go.GoColor.BLACK;
 import static net.sf.gogui.go.GoColor.WHITE;
 import static net.sf.gogui.go.GoColor.EMPTY;
+import static net.sf.gogui.go.GoColor.INVERT_COLOR;
 import net.sf.gogui.go.GoPoint;
 import net.sf.gogui.go.InvalidKomiException;
 import net.sf.gogui.go.Komi;
@@ -1808,6 +1809,14 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         }
         else
             m_gameTreeViewer.toFront();
+    }
+
+    public void actionInvertColor()
+    {
+        if (INVERT_COLOR)
+            INVERT_COLOR = false;
+        else
+            INVERT_COLOR = true;
     }
 
     public void actionToggleBeepAfterMove()
