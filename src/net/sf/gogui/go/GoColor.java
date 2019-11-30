@@ -29,7 +29,14 @@ public enum GoColor
 
         public GoColor otherColor()
         {
-            return WHITE;
+            if (INVERT_COLOR)
+            {
+                return BLACK;
+            }
+            else
+            {
+                return WHITE;
+            }
         }
     },
 
@@ -53,7 +60,14 @@ public enum GoColor
 
         public GoColor otherColor()
         {
-            return BLACK;
+            if (INVERT_COLOR)
+            {
+                return WHITE;
+            }
+            else
+            {
+                return BLACK;
+            }
         }
     },
 
@@ -86,6 +100,8 @@ public enum GoColor
     public static final List<GoColor> WHITE_BLACK;
 
     public static final List<GoColor> BLACK_WHITE_EMPTY;
+
+    public static boolean INVERT_COLOR = false;
 
     static
     {

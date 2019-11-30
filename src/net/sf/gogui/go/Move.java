@@ -4,6 +4,7 @@ package net.sf.gogui.go;
 
 import static net.sf.gogui.go.GoColor.BLACK;
 import static net.sf.gogui.go.GoColor.WHITE;
+import static net.sf.gogui.go.GoColor.INVERT_COLOR;
 
 /** Move containing a point and a color.
     The point can be <code>null</code> (for pass move).
@@ -58,6 +59,13 @@ public final class Move
         @return Color of move */
     public GoColor getColor()
     {
+        if(INVERT_COLOR)
+        {
+            if (m_color == BLACK)
+                return WHITE;
+            else
+                return BLACK;
+        }
         return m_color;
     }
 
