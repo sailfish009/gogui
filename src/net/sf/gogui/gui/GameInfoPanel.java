@@ -34,6 +34,8 @@ import net.sf.gogui.util.StringUtil;
 public class GameInfoPanel
     extends JPanel
 {
+    public static int TIME_LIMIT = 40;
+
     public GameInfoPanel(Game game)
     {
         setBorder(GuiUtil.createEmptyBorder());
@@ -136,9 +138,12 @@ public class GameInfoPanel
 
     private void updateTimeFromClock(ConstClock clock, GoColor c)
     {
+        // temp
         assert c.isBlackWhite();
         String text = clock.getTimeString(c);
         m_clock.get(c).setText(text);
+        // System.out.println(text);
+        // java.awt.Toolkit.getDefaultToolkit().beep();
     }
 }
 

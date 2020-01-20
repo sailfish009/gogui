@@ -113,7 +113,8 @@ public final class Main
             String observer = opt.get("observer", "");
             int size = opt.getInteger("size", GoPoint.DEFAULT_SIZE, 1,
                                       GoPoint.MAX_SIZE);
-            Komi komi = new Komi(6.5);
+            // Komi komi = new Komi(6.5);
+            Komi komi = new Komi(7.5);
             if (opt.contains("komi"))
                 komi = Komi.parseKomi(opt.get("komi"));
             int handicap = opt.getInteger("handicap", 0, 0, 9);

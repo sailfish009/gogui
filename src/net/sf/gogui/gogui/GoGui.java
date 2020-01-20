@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -164,6 +165,8 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
 
         NONE
     }
+
+    public static boolean BACKWARD_CLICKED = false;
 
     public GoGui(String program, File file, int move, String time,
                  boolean verbose, boolean initComputerColor,
@@ -425,6 +428,13 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     {
         if (! checkStateChangePossible())
             return;
+
+        if (n == 1)
+        {
+            // System.out.println("BACKWARD_CLICKED");
+            BACKWARD_CLICKED = true;
+        }
+
         boolean protectGui = (m_gtp != null
                 && (n > 1 || ! m_gtp.isSupported("undo")));
         actionGotoNode(NodeUtil.backward(getCurrentNode(), n), protectGui);
@@ -887,6 +897,13 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         actionGotoNode(NodeUtil.forward(getCurrentNode(), n), protectGui);
     }
 
+    private static void write_timesettings(String path, String time) throws IOException
+    {
+        FileWriter fw = new FileWriter(path);
+        fw.write(time);
+        fw.close();
+    }
+
     public void actionGameInfo()
     {
         if (! checkCommandInProgress())
@@ -907,6 +924,46 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             TimeSettings timeSettings = info.getTimeSettings();
             m_game.setTimeSettings(timeSettings);
             m_timeSettings = timeSettings;
+
+            String file_path = null;
+            String os_name = System.getProperty("os.name");
+            String current_dir = System.getProperty("user.dir");
+            // System.out.println(current_dir);
+
+            if(os_name.startsWith("Windows"))
+                file_path = current_dir + "\\time.txt";
+            else
+                file_path = current_dir + "/time.txt";
+
+            // save time setting to file
+            long t1 = m_timeSettings.getPreByoyomi() / 60000L;
+            long t2 = m_timeSettings.getByoyomi() / 1000L;
+            int t3 = m_timeSettings.getByoyomiMoves();
+            if (t3 < 0)
+            {
+                String output = String.format("%dmin\n", t1);
+
+                try
+                {
+                    write_timesettings(file_path, output);
+                }
+                catch(IOException e)
+                {
+                }
+            }
+            else
+            {
+                String output = String.format("%dmin+%dsec/%d\n", t1, t2, t3);
+
+                try
+                {
+                    write_timesettings(file_path, output);
+                }
+                catch(IOException e)
+                {
+                }
+
+            }
         }
         setTitle();
         updateViews(false);
@@ -4432,7 +4489,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName);
+            setTitle(appName + " 1.0.0");
         else
         {
             String name = getProgramLabel();

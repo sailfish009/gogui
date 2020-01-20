@@ -126,7 +126,7 @@ public final class TimeSettings
                                        + " moves");
             }
         }
-        if (preByoyomi <= 0)
+        if (preByoyomi < 0)
             throw new ErrorMessage("Pre-byoyomi time must be positive");
         if (useByoyomi)
         {

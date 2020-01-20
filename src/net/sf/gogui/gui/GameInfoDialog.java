@@ -104,7 +104,7 @@ public final class GameInfoDialog
                              info.get(StringInfo.DATE),
                              "TT_GAMEINFO_DATE", labels, values);
         m_rules = createEntry("LB_GAMEINFO_RULES", 12,
-                              info.get(StringInfo.RULES),
+                              "Chinese", //info.get(StringInfo.RULES),
                               "TT_GAMEINFO_RULES", labels, values);
         String komi = "";
         if (info.getKomi() != null)

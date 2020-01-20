@@ -6,8 +6,10 @@ import java.util.TimerTask;
 import java.util.Timer;
 import net.sf.gogui.go.BlackWhiteSet;
 import net.sf.gogui.go.GoColor;
+import net.sf.gogui.gogui.GoGui;
 import static net.sf.gogui.go.GoColor.BLACK;
 import static net.sf.gogui.go.GoColor.WHITE;
+import static net.sf.gogui.gogui.GoGui.BACKWARD_CLICKED;
 import net.sf.gogui.util.StringUtil;
 
 /** Time control for a Go game.
@@ -78,29 +80,193 @@ public final class Clock
         return m_timeSettings;
     }
 
+    private boolean run_once_white = true;
+    private boolean run_once_black = true;
+    private boolean pretime_white = false;
+    private boolean pretime_black = false;
+    private long pre_time_black = 0;
+    private long pre_time_white = 0;
+
     public String getTimeString(GoColor color)
     {
         assert color.isBlackWhite();
         TimeRecord record = getRecord(color);
         long time = record.m_time;
+
+        if (m_isRunning == false)
+        {
+           pre_time_black = pre_time_white = PRE_TIME_COUNT;
+           return getTimeString((double)PRE_TIME_COUNT, -1);
+        }
+
         if (color.equals(m_toMove))
-            time += currentTimeMillis() - m_startTime;
-        if (isInitialized())
         {
-            if (record.m_isInByoyomi)
-                time = getByoyomi() - time;
-            else
-                time = getPreByoyomi() - time;
+            switch(color)
+            {
+                case BLACK:
+                    if(pretime_black == false)
+                    {
+                        time += currentTimeMillis() - m_startTime;
+                        time = time / 1000L;
+                        time = PRE_TIME_COUNT - time;
+                        if (time == 0)
+                            pretime_black = true;
+                        pre_time_black = time;
+                        return getTimeString((double)time, -1);
+                    }
+                    else
+                    {
+                        if (run_once_black && m_isRunning)
+                        {
+                            run_once_black = false;
+                            m_prevTime_black = currentTimeMillis();
+                        }
+
+                        time = currentTimeMillis() - m_prevTime_black;
+                        time = time / 1000L;
+                        time = TIME_COUNT - time;
+                        if (time >=0 && time < 11)
+                        {
+                            if( m_lost_time_white == false && m_lost_time_black == false)
+                                java.awt.Toolkit.getDefaultToolkit().beep();
+                        }
+                        else if (time < 0)
+                        {
+                            if( m_lost_time_white == false && m_lost_time_black == false)
+                                java.awt.Toolkit.getDefaultToolkit().beep();
+
+                            time = TIME_COUNT;
+                            m_prevTime_black = currentTimeMillis();
+                            if(m_chance_black != 0)
+                                m_chance_black -= 1;
+                            if(m_chance_black == 0)
+                            {
+                                m_lost_time_black = true;
+                                System.out.println(" black time out ");
+                            }
+                        }
+                        pre_time_black = time;
+                        return getTimeString((double)time, m_chance_black);
+                    }
+
+                case WHITE:
+                    if(pretime_white == false)
+                    {
+                        time += currentTimeMillis() - m_startTime;
+                        time = time / 1000L;
+                        time = PRE_TIME_COUNT - time;
+                        if (time == 0)
+                            pretime_white = true;
+                        pre_time_white = time;
+                        return getTimeString((double)time, -1);
+                    }
+                    else
+                    {
+                        if (run_once_white && m_isRunning)
+                        {
+                            run_once_white = false;
+                            m_prevTime_white = currentTimeMillis();
+                        }
+
+                        time = currentTimeMillis() - m_prevTime_white;
+                        time = time / 1000L;
+                        time = TIME_COUNT - time;
+                        if (time >=0 && time < 11)
+                        {
+                            if( m_lost_time_white == false && m_lost_time_black == false)
+                                java.awt.Toolkit.getDefaultToolkit().beep();
+                        }
+                        else if (time < 0)
+                        {
+
+                            if( m_lost_time_white == false && m_lost_time_black == false)
+                                java.awt.Toolkit.getDefaultToolkit().beep();
+
+                            time = TIME_COUNT;
+                            m_prevTime_white = currentTimeMillis();
+                            if(m_chance_white != 0)
+                                m_chance_white -= 1;
+                            if(m_chance_white == 0)
+                            {
+                                m_lost_time_white = true;
+                                System.out.println(" white time out ");
+                                // GoGui.LostOnTime(WHITE);
+                            }
+                        }
+                        pre_time_white = time;
+                        return getTimeString((double)time, m_chance_white);
+                    }
+
+            }
         }
-        int movesLeft = -1;
-        if (isInitialized() && record.m_isInByoyomi)
+        else
         {
-            movesLeft = record.m_movesLeft;
+            switch(color)
+            {
+                case BLACK:
+                    {
+                        if(pretime_black == false)
+                        {
+                            time = pre_time_black; 
+                            m_prevTime_black = currentTimeMillis();
+                            return getTimeString((double)time, -1);
+                        }
+                        else
+                        {
+                            time = TIME_COUNT; 
+                            m_prevTime_black = currentTimeMillis();
+
+                            return getTimeString((double)time, m_chance_black);
+                        }
+                    }
+
+                case WHITE:
+                    {
+                        if(pretime_white == false)
+                        {
+                            time = pre_time_white; 
+                            m_prevTime_white = currentTimeMillis();
+                            return getTimeString((double)time, -1);
+                        }
+                        else
+                        {
+                            time = TIME_COUNT; 
+                            m_prevTime_white = currentTimeMillis();
+
+                            return getTimeString((double)time, m_chance_white);
+                        }
+                    }
+            }
         }
-        // Round time to seconds
-        time = time / 1000L;
-        return getTimeString((double)time, movesLeft);
+
+        return "00:00";
     }
+
+
+    // orig
+    // public String getTimeString(GoColor color)
+    // {
+    //     assert color.isBlackWhite();
+    //     TimeRecord record = getRecord(color);
+    //     long time = record.m_time;
+    //     if (color.equals(m_toMove))
+    //         time += currentTimeMillis() - m_startTime;
+    //     if (isInitialized())
+    //     {
+    //         if (record.m_isInByoyomi)
+    //             time = getByoyomi() - time;
+    //         else
+    //             time = getPreByoyomi() - time;
+    //     }
+    //     int movesLeft = -1;
+    //     if (isInitialized() && record.m_isInByoyomi)
+    //     {
+    //         movesLeft = record.m_movesLeft;
+    //     }
+    //     // Round time to seconds
+    //     time = time / 1000L;
+    //     return getTimeString((double)time, movesLeft);
+    // }
 
     /** Format time left to a string.
         If movesLeft &lt; 0, only the time will be returned, otherwise
@@ -110,11 +276,17 @@ public final class Clock
     {
         StringBuilder buffer = new StringBuilder(8);
         buffer.append(StringUtil.formatTime((long)timeLeft));
-        if (movesLeft >= 0)
+        if (movesLeft > 0)
         {
             buffer.append('/');
             buffer.append(movesLeft);
         }
+        else if (movesLeft == 0)
+        {
+            buffer.append('/');
+            buffer.append('X');
+        }
+
         return buffer.toString();
     }
 
@@ -134,6 +306,7 @@ public final class Clock
     {
         if (! m_isRunning)
             return;
+
         TimeRecord record = getRecord(m_toMove);
         long currentTime = currentTimeMillis();
         long time = currentTime - m_startTime;
@@ -142,6 +315,31 @@ public final class Clock
         m_isRunning = false;
         updateListener();
         stopTimer();
+
+        pre_time_black = pre_time_white = PRE_TIME_COUNT;
+
+        if (BACKWARD_CLICKED)
+        {
+            BACKWARD_CLICKED = false;
+            System.out.println("PRE_TIME_COUNT: "+ PRE_TIME_COUNT);
+
+            run_once_white = run_once_black = true;
+
+            if(m_lost_time_white)
+                m_chance_white = 1;
+
+            if(m_lost_time_black)
+                m_chance_black = 1;
+
+            m_lost_time_white = m_lost_time_black = false;
+        }
+        else
+        {
+            m_chance_white = m_chance_black = LEFT_COUNT;
+            run_once_white = run_once_black = true;
+            m_lost_time_white = m_lost_time_black = 
+                pretime_black = pretime_white = false;
+        }
     }
 
     public boolean isInitialized()
@@ -159,17 +357,32 @@ public final class Clock
         return m_isRunning;
     }
 
+    private boolean m_lost_time_white = false;
+    private boolean m_lost_time_black = false;
+
     public boolean lostOnTime(GoColor color)
     {
-        if (! isInitialized())
-            return false;
-        TimeRecord record = getRecord(color);
-        long time = record.m_time;
-        if (getUseByoyomi())
-            return record.m_byoyomiExceeded;
-        else
-            return (time > getPreByoyomi());
+        switch(color)
+        {
+            case BLACK: return m_lost_time_black;
+            case WHITE: return m_lost_time_white;
+        }
+        return false;
     }
+
+
+    // orig
+    // public boolean lostOnTime(GoColor color)
+    // {
+    //     if (! isInitialized())
+    //         return false;
+    //     TimeRecord record = getRecord(color);
+    //     long time = record.m_time;
+    //     if (getUseByoyomi())
+    //         return record.m_byoyomiExceeded;
+    //     else
+    //         return (time > getPreByoyomi());
+    // }
 
     /** Parses a time string.
         The expected format is <tt>[[H:]MM:]SS</tt>.
@@ -263,8 +476,23 @@ public final class Clock
         the next byoyomi period is initialized. */
     public void setTimeSettings(TimeSettings settings)
     {
-        m_timeSettings = settings;
+        try
+        {
+            PRE_TIME_COUNT = settings.getPreByoyomi() / 1000L;
+            TIME_COUNT = settings.getByoyomi() / 1000L;
+            LEFT_COUNT = settings.getByoyomiMoves();
+
+            m_chance_black = m_chance_white = LEFT_COUNT;
+        }
+        catch(Exception e)
+        {}
     }
+
+    // orig
+    // public void setTimeSettings(TimeSettings settings)
+    // {
+    //     m_timeSettings = settings;
+    // }
 
     /** Set time left.
         @param color Color to set the time for.
@@ -312,6 +540,16 @@ public final class Clock
         m_isRunning = true;
         m_startTime = currentTimeMillis();
         startTimer();
+        if (color == BLACK)
+        {
+            // System.out.println("WHITE : "+ m_prevTime_white);
+            m_prevTime_white = m_startTime;
+        }
+        else
+        {
+            // System.out.println("BLACK : "+ m_prevTime_black);
+            m_prevTime_black = m_startTime;
+        }
     }
 
     /** Stop time for a move.
@@ -368,6 +606,17 @@ public final class Clock
     private boolean m_isRunning = false;
 
     private long m_startTime;
+
+    // prebyoyomi
+    private long  PRE_TIME_COUNT = 60; // 60s x 1 (1 min)
+    // byoyomi
+    private long  TIME_COUNT = 40;
+    private int  LEFT_COUNT = 3;
+
+    private long m_prevTime_white;
+    private long m_prevTime_black;
+    private int  m_chance_white = 3;
+    private int  m_chance_black = 3;
 
     private GoColor m_toMove;
 

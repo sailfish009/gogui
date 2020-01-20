@@ -32,6 +32,11 @@ import net.sf.gogui.util.Platform;
 import net.sf.gogui.util.StringUtil;
 import net.sf.gogui.version.Version;
 
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.IOException;
+
 /** GoGui main function. */
 public final class Main
 {
@@ -106,6 +111,16 @@ public final class Main
         component.add(filler);
     }
 
+    private static String read_timesettings(String path) throws IOException
+    {
+        FileReader fr = new FileReader(path);
+        BufferedReader br = new BufferedReader(fr);
+        String s = null;
+        s = br.readLine();
+        fr.close();
+        return s;
+    }
+
     private static void startGoGui(final GoGuiSettings settings)
         throws GtpError, ErrorMessage
     {
@@ -143,8 +158,29 @@ public final class Main
                     GuiUtil.initLookAndFeel(settings.m_lookAndFeel);
                     try
                     {
+
+                        // String m_time = "10min+40sec/3";
+                        String file_path = null;
+                        String os_name = System.getProperty("os.name");
+                        String current_dir = System.getProperty("user.dir");
+                        // System.out.println(current_dir);
+
+                        if(os_name.startsWith("Windows"))
+                            file_path = current_dir + "\\time.txt";
+                        else
+                            file_path = current_dir + "/time.txt";
+
+                        String m_time = null;
+                        try
+                        {
+                            m_time = read_timesettings(file_path);
+                        }
+                        catch(IOException e)
+                        {}
+
+
                         new GoGui(settings.m_program, settings.m_file,
-                                  settings.m_move, settings.m_time,
+                                  settings.m_move, m_time,
                                   settings.m_verbose,
                                   settings.m_initComputerColor,
                                   settings.m_computerBlack,
@@ -153,6 +189,18 @@ public final class Main
                                   settings.m_gtpCommand,
                                //  settings.m_rules,
                                   settings.m_analyzeCommands);
+
+                        // orig
+                        // new GoGui(settings.m_program, settings.m_file,
+                        //           settings.m_move, settings.m_time,
+                        //           settings.m_verbose,
+                        //           settings.m_initComputerColor,
+                        //           settings.m_computerBlack,
+                        //           settings.m_computerWhite, settings.m_auto,
+                        //           settings.m_register, settings.m_gtpFile,
+                        //           settings.m_gtpCommand,
+                        //        //  settings.m_rules,
+                        //           settings.m_analyzeCommands);
                     }
                     catch (ErrorMessage e)
                     {
