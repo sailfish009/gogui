@@ -137,6 +137,7 @@ import net.sf.gogui.util.Platform;
 import net.sf.gogui.util.ProgressShow;
 import net.sf.gogui.util.StringUtil;
 import net.sf.gogui.version.Version;
+import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
 
 /** Graphical user interface to a Go program. */
 public class GoGui
@@ -166,6 +167,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         NONE
     }
 
+    public static boolean FISCHER_RULE = false;
     public static boolean BACKWARD_CLICKED = false;
 
     public GoGui(String program, File file, int move, String time,
@@ -323,7 +325,24 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if (m_programCommand != null)
             m_program = new Program(program, program, "", m_programCommand, "");
         if (time != null)
-            m_timeSettings = TimeSettings.parse(time);
+        {
+           if(Character.isDigit(time.charAt(0)))
+            {
+                System.out.println("Fischer False");
+                FISCHER_RULE = false;
+                m_timeSettings = TimeSettings.parse(time);
+            }
+            else
+            {
+                System.out.println("Fischer True");
+                FISCHER_RULE = true;
+                m_timeSettings = TimeSettings.parse(time.substring(1));
+            }
+        }
+
+        // orig
+        // if (time != null)
+        //     m_timeSettings = TimeSettings.parse(time);
         protectGui(); // Show wait cursor
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -909,6 +928,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if (! checkCommandInProgress())
             // Changes in game info may send GTP commands
             return;
+        boolean prev_time_rule = FISCHER_RULE;
         ConstNode node = m_game.getGameInfoNode();
         GameInfo info = new GameInfo(node.getGameInfoConst());
         GameInfoDialog.show(this, info, m_messageDialogs);
@@ -919,7 +939,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if (komi != null && ! komi.equals(prefsKomi) && info.getHandicap() == 0)
             m_prefs.put("komi", komi.toString());
         if (info.getTimeSettings() != null
-                && ! info.getTimeSettings().equals(m_timeSettings))
+                && ( prev_time_rule != FISCHER_RULE  ||  ! info.getTimeSettings().equals(m_timeSettings) ))
         {
             TimeSettings timeSettings = info.getTimeSettings();
             m_game.setTimeSettings(timeSettings);
@@ -928,7 +948,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             String file_path = null;
             String os_name = System.getProperty("os.name");
             String current_dir = System.getProperty("user.dir");
-            // System.out.println(current_dir);
+
 
             if(os_name.startsWith("Windows"))
                 file_path = current_dir + "\\time.txt";
@@ -953,7 +973,12 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             }
             else
             {
-                String output = String.format("%dmin+%dsec/%d\n", t1, t2, t3);
+                String output = null; 
+
+                if(FISCHER_RULE)
+                    output = String.format("f%dmin+%dsec/%d\n", t1, t2, t3);
+                else
+                    output = String.format("%dmin+%dsec/%d\n", t1, t2, t3);
 
                 try
                 {
@@ -962,7 +987,6 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
                 catch(IOException e)
                 {
                 }
-
             }
         }
         setTitle();
@@ -4489,7 +4513,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.0");
+            setTitle(appName + " 1.0.1");
         else
         {
             String name = getProgramLabel();

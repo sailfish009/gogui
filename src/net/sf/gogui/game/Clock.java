@@ -10,6 +10,7 @@ import net.sf.gogui.gogui.GoGui;
 import static net.sf.gogui.go.GoColor.BLACK;
 import static net.sf.gogui.go.GoColor.WHITE;
 import static net.sf.gogui.gogui.GoGui.BACKWARD_CLICKED;
+import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
 import net.sf.gogui.util.StringUtil;
 
 /** Time control for a Go game.
@@ -87,6 +88,14 @@ public final class Clock
     private long pre_time_black = 0;
     private long pre_time_white = 0;
 
+    // fischer rule
+    private boolean add_once_white = false;
+    private boolean add_once_black = false;
+    private long total_time_white = 0;
+    private long total_time_black = 0;
+
+    private boolean first_once_black = true;
+
     public String getTimeString(GoColor color)
     {
         assert color.isBlackWhite();
@@ -95,148 +104,252 @@ public final class Clock
 
         if (m_isRunning == false)
         {
-           pre_time_black = pre_time_white = PRE_TIME_COUNT;
+            if(FISCHER_RULE)
+            {
+                add_once_white = add_once_black =
+                    run_once_white = run_once_black = false;
+            }
+            pre_time_black = pre_time_white =
+                total_time_black = total_time_white = PRE_TIME_COUNT;
            return getTimeString((double)PRE_TIME_COUNT, -1);
         }
 
-        if (color.equals(m_toMove))
+        if(FISCHER_RULE)
         {
-            switch(color)
+            if (color.equals(m_toMove))
             {
-                case BLACK:
-                    if(pretime_black == false)
+                switch(color)
+                {
+                    case BLACK:
                     {
+                        if(add_once_black)
+                        {
+                            add_once_black = false;
+                            m_startTime = currentTimeMillis();
+                        }
+
                         time += currentTimeMillis() - m_startTime;
-                        time = time / 1000L;
-                        time = PRE_TIME_COUNT - time;
-                        if (time == 0)
-                            pretime_black = true;
+                        time = total_time_black - time/1000L;
                         pre_time_black = time;
+
+                        if (time >=0 && time < 11)
+                        {
+                            java.awt.Toolkit.getDefaultToolkit().beep();
+                        }
+                        else if(time < 0)
+                        {
+                            m_lost_time_black = true;
+                            System.out.println(" black time out ");
+                        }
                         return getTimeString((double)time, -1);
                     }
-                    else
+
+                    case WHITE:
                     {
-                        if (run_once_black && m_isRunning)
+                        if(add_once_white)
+                        {
+                            add_once_white = false;
+                            m_startTime = currentTimeMillis();
+                        }
+
+                        time += currentTimeMillis() - m_startTime;
+                        time = total_time_white - time/1000L;
+                        pre_time_white = time;
+
+                        if (time >=0 && time < 11)
+                        {
+                            java.awt.Toolkit.getDefaultToolkit().beep();
+                        }
+                        else if(time < 0)
+                        {
+                            m_lost_time_white = true;
+                            System.out.println(" white time out ");
+                        }
+                        return getTimeString((double)time, -1);
+                    }
+                }
+            }
+            else
+            {
+                switch(color)
+                {
+                    case BLACK:
+                    {
+                        if(first_once_black)
+                        {
+                            return getTimeString((double)total_time_white, -1);
+                        }
+
+                        if(run_once_black)
                         {
                             run_once_black = false;
-                            m_prevTime_black = currentTimeMillis();
+                            pre_time_black += TIME_COUNT;
+                            TimeRecord b_record = getRecord(color);
+                            b_record.m_time = 0;
+                            total_time_black = pre_time_black;
+                            add_once_black = true;
                         }
-
-                        time = currentTimeMillis() - m_prevTime_black;
-                        time = time / 1000L;
-                        time = TIME_COUNT - time;
-                        if (time >=0 && time < 11)
-                        {
-                            if( m_lost_time_white == false && m_lost_time_black == false)
-                                java.awt.Toolkit.getDefaultToolkit().beep();
-                        }
-                        else if (time < 0)
-                        {
-                            if( m_lost_time_white == false && m_lost_time_black == false)
-                                java.awt.Toolkit.getDefaultToolkit().beep();
-
-                            time = TIME_COUNT;
-                            m_prevTime_black = currentTimeMillis();
-                            if(m_chance_black != 0)
-                                m_chance_black -= 1;
-                            if(m_chance_black == 0)
-                            {
-                                m_lost_time_black = true;
-                                System.out.println(" black time out ");
-                            }
-                        }
-                        pre_time_black = time;
-                        return getTimeString((double)time, m_chance_black);
+                        return getTimeString((double)total_time_black, -1);
                     }
 
-                case WHITE:
-                    if(pretime_white == false)
+                    case WHITE:
                     {
-                        time += currentTimeMillis() - m_startTime;
-                        time = time / 1000L;
-                        time = PRE_TIME_COUNT - time;
-                        if (time == 0)
-                            pretime_white = true;
-                        pre_time_white = time;
-                        return getTimeString((double)time, -1);
-                    }
-                    else
-                    {
-                        if (run_once_white && m_isRunning)
+                        if(run_once_white)
                         {
                             run_once_white = false;
-                            m_prevTime_white = currentTimeMillis();
+                            pre_time_white += TIME_COUNT;
+                            TimeRecord w_record = getRecord(color);
+                            w_record.m_time = 0;
+                            total_time_white = pre_time_white;
+                            add_once_white = true;
                         }
-
-                        time = currentTimeMillis() - m_prevTime_white;
-                        time = time / 1000L;
-                        time = TIME_COUNT - time;
-                        if (time >=0 && time < 11)
-                        {
-                            if( m_lost_time_white == false && m_lost_time_black == false)
-                                java.awt.Toolkit.getDefaultToolkit().beep();
-                        }
-                        else if (time < 0)
-                        {
-
-                            if( m_lost_time_white == false && m_lost_time_black == false)
-                                java.awt.Toolkit.getDefaultToolkit().beep();
-
-                            time = TIME_COUNT;
-                            m_prevTime_white = currentTimeMillis();
-                            if(m_chance_white != 0)
-                                m_chance_white -= 1;
-                            if(m_chance_white == 0)
-                            {
-                                m_lost_time_white = true;
-                                System.out.println(" white time out ");
-                                // GoGui.LostOnTime(WHITE);
-                            }
-                        }
-                        pre_time_white = time;
-                        return getTimeString((double)time, m_chance_white);
+                        return getTimeString((double)total_time_white, -1);
                     }
-
+                }
             }
+
         }
         else
         {
-            switch(color)
+            if (color.equals(m_toMove))
             {
-                case BLACK:
-                    {
+                switch(color)
+                {
+                    case BLACK:
                         if(pretime_black == false)
                         {
-                            time = pre_time_black; 
-                            m_prevTime_black = currentTimeMillis();
+                            time += currentTimeMillis() - m_startTime;
+                            time = time / 1000L;
+                            time = PRE_TIME_COUNT - time;
+                            if (time == 0)
+                                pretime_black = true;
+                            pre_time_black = time;
                             return getTimeString((double)time, -1);
                         }
                         else
                         {
-                            time = TIME_COUNT; 
-                            m_prevTime_black = currentTimeMillis();
+                            if (run_once_black && m_isRunning)
+                            {
+                                run_once_black = false;
+                                m_prevTime_black = currentTimeMillis();
+                            }
 
+                            time = currentTimeMillis() - m_prevTime_black;
+                            time = time / 1000L;
+                            time = TIME_COUNT - time;
+                            if (time >=0 && time < 11)
+                            {
+                                if( m_lost_time_white == false && m_lost_time_black == false)
+                                    java.awt.Toolkit.getDefaultToolkit().beep();
+                            }
+                            else if (time < 0)
+                            {
+                                if( m_lost_time_white == false && m_lost_time_black == false)
+                                    java.awt.Toolkit.getDefaultToolkit().beep();
+
+                                time = TIME_COUNT;
+                                m_prevTime_black = currentTimeMillis();
+                                if(m_chance_black != 0)
+                                    m_chance_black -= 1;
+                                if(m_chance_black == 0)
+                                {
+                                    m_lost_time_black = true;
+                                    System.out.println(" black time out ");
+                                }
+                            }
+                            pre_time_black = time;
                             return getTimeString((double)time, m_chance_black);
                         }
-                    }
 
-                case WHITE:
-                    {
+                    case WHITE:
                         if(pretime_white == false)
                         {
-                            time = pre_time_white; 
-                            m_prevTime_white = currentTimeMillis();
+                            time += currentTimeMillis() - m_startTime;
+                            time = time / 1000L;
+                            time = PRE_TIME_COUNT - time;
+                            if (time == 0)
+                                pretime_white = true;
+                            pre_time_white = time;
                             return getTimeString((double)time, -1);
                         }
                         else
                         {
-                            time = TIME_COUNT; 
-                            m_prevTime_white = currentTimeMillis();
+                            if (run_once_white && m_isRunning)
+                            {
+                                run_once_white = false;
+                                m_prevTime_white = currentTimeMillis();
+                            }
 
+                            time = currentTimeMillis() - m_prevTime_white;
+                            time = time / 1000L;
+                            time = TIME_COUNT - time;
+                            if (time >=0 && time < 11)
+                            {
+                                if( m_lost_time_white == false && m_lost_time_black == false)
+                                    java.awt.Toolkit.getDefaultToolkit().beep();
+                            }
+                            else if (time < 0)
+                            {
+
+                                if( m_lost_time_white == false && m_lost_time_black == false)
+                                    java.awt.Toolkit.getDefaultToolkit().beep();
+
+                                time = TIME_COUNT;
+                                m_prevTime_white = currentTimeMillis();
+                                if(m_chance_white != 0)
+                                    m_chance_white -= 1;
+                                if(m_chance_white == 0)
+                                {
+                                    m_lost_time_white = true;
+                                    System.out.println(" white time out ");
+                                }
+                            }
+                            pre_time_white = time;
                             return getTimeString((double)time, m_chance_white);
                         }
-                    }
+
+                }
             }
+            else
+            {
+                switch(color)
+                {
+                    case BLACK:
+                        {
+                            if(pretime_black == false)
+                            {
+                                time = pre_time_black; 
+                                m_prevTime_black = currentTimeMillis();
+                                return getTimeString((double)time, -1);
+                            }
+                            else
+                            {
+                                time = TIME_COUNT; 
+                                m_prevTime_black = currentTimeMillis();
+
+                                return getTimeString((double)time, m_chance_black);
+                            }
+                        }
+
+                    case WHITE:
+                        {
+                            if(pretime_white == false)
+                            {
+                                time = pre_time_white; 
+                                m_prevTime_white = currentTimeMillis();
+                                return getTimeString((double)time, -1);
+                            }
+                            else
+                            {
+                                time = TIME_COUNT; 
+                                m_prevTime_white = currentTimeMillis();
+
+                                return getTimeString((double)time, m_chance_white);
+                            }
+                        }
+                }
+            }
+
         }
 
         return "00:00";
@@ -321,7 +434,6 @@ public final class Clock
         if (BACKWARD_CLICKED)
         {
             BACKWARD_CLICKED = false;
-            System.out.println("PRE_TIME_COUNT: "+ PRE_TIME_COUNT);
 
             run_once_white = run_once_black = true;
 
@@ -340,6 +452,14 @@ public final class Clock
             m_lost_time_white = m_lost_time_black = 
                 pretime_black = pretime_white = false;
         }
+
+        if(FISCHER_RULE)
+        {
+            add_once_white = add_once_black = false;
+            total_time_white = total_time_black = 0;
+            first_once_black = true;
+        }
+
     }
 
     public boolean isInitialized()
@@ -544,11 +664,18 @@ public final class Clock
         {
             // System.out.println("WHITE : "+ m_prevTime_white);
             m_prevTime_white = m_startTime;
+            if(FISCHER_RULE)
+            {
+                first_once_black = false;
+                run_once_white = true;
+            }
         }
         else
         {
             // System.out.println("BLACK : "+ m_prevTime_black);
             m_prevTime_black = m_startTime;
+            if(FISCHER_RULE)
+                run_once_black = true;
         }
     }
 
@@ -610,7 +737,8 @@ public final class Clock
     // prebyoyomi
     private long  PRE_TIME_COUNT = 60; // 60s x 1 (1 min)
     // byoyomi
-    private long  TIME_COUNT = 40;
+    private long  TIME_COUNT = 30;
+
     private int  LEFT_COUNT = 3;
 
     private long m_prevTime_white;

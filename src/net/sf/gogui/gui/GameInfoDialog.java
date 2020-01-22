@@ -5,6 +5,9 @@ package net.sf.gogui.gui;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.Checkbox;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
@@ -24,6 +27,7 @@ import net.sf.gogui.game.GameInfo;
 import net.sf.gogui.game.StringInfo;
 import net.sf.gogui.game.StringInfoColor;
 import net.sf.gogui.game.TimeSettings;
+import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
 
 /** Dialog for editing game settings and other information. */
 public final class GameInfoDialog
@@ -171,6 +175,18 @@ public final class GameInfoDialog
         }
         panel.add(m_byoyomiMoves);
         panel.add(new JLabel(" " + i18n("LB_GAMEINFO_TIME_MOVES")));
+        // add fischer rule checkbox
+        Checkbox check_fischer= new Checkbox("Fischer Rule", null, FISCHER_RULE);
+        check_fischer.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange()==ItemEvent.SELECTED)
+                    FISCHER_RULE = true;
+                else
+                    FISCHER_RULE = false;
+            }
+        });
+
+        boxValue.add(check_fischer);
         values.add(boxValue);
     }
 
