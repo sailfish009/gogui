@@ -158,11 +158,17 @@ public final class GameInfoDialog
         m_preByoyomi = new TimeField(3, "TT_GAMEINFO_TIME_MAIN");
         if (timeSettings != null)
             m_preByoyomi.setTime(timeSettings.getPreByoyomi());
+        else
+            m_preByoyomi.setTime(0);
+
         panel.add(m_preByoyomi);
         panel.add(new JLabel(" + "));
         m_byoyomi = new TimeField(2, "TT_GAMEINFO_TIME_BYOYOMI");
         if (timeSettings != null && timeSettings.getUseByoyomi())
             m_byoyomi.setTime(timeSettings.getByoyomi());
+        else
+            m_byoyomi.setTime(20000);
+
         panel.add(m_byoyomi);
         panel.add(new JLabel(" / "));
         m_byoyomiMoves = new JTextField(2);
@@ -172,6 +178,10 @@ public final class GameInfoDialog
         {
             int byoyomiMoves = timeSettings.getByoyomiMoves();
             m_byoyomiMoves.setText(Integer.toString(byoyomiMoves));
+        }
+        else
+        {
+            m_byoyomiMoves.setText("10");
         }
         panel.add(m_byoyomiMoves);
         panel.add(new JLabel(" " + i18n("LB_GAMEINFO_TIME_MOVES")));
