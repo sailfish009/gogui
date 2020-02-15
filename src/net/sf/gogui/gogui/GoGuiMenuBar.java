@@ -494,6 +494,7 @@ public class GoGuiMenuBar
         menu.add(actions.m_actionShowAnalyzeDialog);
         menu.add(actions.m_actionShowShell);
         menu.add(actions.m_actionInvertColor);
+        menu.add(actions.m_actionToggleBeep);
         menu.addSeparator();
         menu.add(actions.m_actionReattachProgram);
         menu.add(actions.m_actionReattachWithParameters);

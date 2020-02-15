@@ -552,6 +552,11 @@ public class GoGuiActions
             public void actionPerformed(ActionEvent e) {
                 m_goGui.actionInvertColor(); } };
 
+    public final GuiAction m_actionToggleBeep =
+        new GuiAction(i18n("ACT_TOGGLE_BEEP"), null, KeyEvent.VK_F11, FUNCTION_KEY) {
+            public void actionPerformed(ActionEvent e) {
+                m_goGui.actionToggleBeep(); } };
+
     public final GuiAction m_actionShowVariationsChildren =
         new GuiAction(i18n("ACT_VARIATION_LABELS_CHILDREN")) {
             public void actionPerformed(ActionEvent e) {

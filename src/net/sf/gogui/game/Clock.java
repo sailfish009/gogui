@@ -11,6 +11,7 @@ import static net.sf.gogui.go.GoColor.BLACK;
 import static net.sf.gogui.go.GoColor.WHITE;
 import static net.sf.gogui.gogui.GoGui.BACKWARD_CLICKED;
 import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
+import static net.sf.gogui.gogui.GoGui.TOGGLE_BEEP;
 import net.sf.gogui.util.StringUtil;
 
 /** Time control for a Go game.
@@ -95,6 +96,7 @@ public final class Clock
     private long total_time_black = 0;
 
     private boolean first_once_black = true;
+    private boolean first_once_white = true;
 
     public String getTimeString(GoColor color)
     {
@@ -177,7 +179,8 @@ public final class Clock
                     {
                         if(first_once_black)
                         {
-                            return getTimeString((double)total_time_white, -1);
+                            first_once_black = false;
+                            return getTimeString((double)total_time_black, -1);
                         }
 
                         if(run_once_black)
@@ -194,6 +197,12 @@ public final class Clock
 
                     case WHITE:
                     {
+                        if(first_once_white)
+                        {
+                            first_once_white = false;
+                            return getTimeString((double)total_time_white, -1);
+                        }
+
                         if(run_once_white)
                         {
                             run_once_white = false;
@@ -239,7 +248,9 @@ public final class Clock
                             time = TIME_COUNT - time;
                             if (time >=0 && time < 11)
                             {
-                                if( m_lost_time_white == false && m_lost_time_black == false)
+                                if(TOGGLE_BEEP)
+                                    java.awt.Toolkit.getDefaultToolkit().beep();
+                                else if( m_lost_time_white == false && m_lost_time_black == false)
                                     java.awt.Toolkit.getDefaultToolkit().beep();
                             }
                             else if (time < 0)
@@ -457,7 +468,7 @@ public final class Clock
         {
             add_once_white = add_once_black = false;
             total_time_white = total_time_black = 0;
-            first_once_black = true;
+            first_once_black = first_once_white = true;
         }
 
     }
@@ -666,7 +677,7 @@ public final class Clock
             m_prevTime_white = m_startTime;
             if(FISCHER_RULE)
             {
-                first_once_black = false;
+                // first_once_black = first_once_white = false;
                 run_once_white = true;
             }
         }
@@ -675,7 +686,10 @@ public final class Clock
             // System.out.println("BLACK : "+ m_prevTime_black);
             m_prevTime_black = m_startTime;
             if(FISCHER_RULE)
+            {
+                // first_once_black = first_once_white = false;
                 run_once_black = true;
+            }
         }
     }
 

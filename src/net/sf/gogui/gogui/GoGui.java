@@ -138,6 +138,8 @@ import net.sf.gogui.util.ProgressShow;
 import net.sf.gogui.util.StringUtil;
 import net.sf.gogui.version.Version;
 import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
+import static net.sf.gogui.gogui.GoGui.TOGGLE_BEEP;
+import static net.sf.gogui.gogui.GoGui.COMPUTER_COLOR;
 
 /** Graphical user interface to a Go program. */
 public class GoGui
@@ -168,7 +170,10 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     }
 
     public static boolean FISCHER_RULE = false;
+    public static boolean TOGGLE_BEEP = true;
     public static boolean BACKWARD_CLICKED = false;
+    public static boolean FILE_OPENED = false;
+    public static int COMPUTER_COLOR = 1; //  0: black,  1: white, 2: none, 3: both
 
     public GoGui(String program, File file, int move, String time,
                  boolean verbose, boolean initComputerColor,
@@ -522,6 +527,20 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         m_prefs.putBoolean("computer-none", computerNone);
         m_computerBlack = isBlack;
         m_computerWhite = isWhite;
+
+        if(m_computerBlack == true && m_computerWhite == false)
+            // black
+            COMPUTER_COLOR = 0;
+        else if(m_computerBlack == false && m_computerWhite == true)
+            // white 
+            COMPUTER_COLOR = 1;
+        else if(m_computerBlack == false && m_computerWhite == false)
+            // none 
+            COMPUTER_COLOR = 2;
+        else
+            // both 
+            COMPUTER_COLOR = 3;
+
         if (! isCommandInProgress())
             checkComputerMove();
         updateViews(false);
@@ -1251,6 +1270,8 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
 
     public void actionNewGame()
     {
+        // default computer color: white
+        COMPUTER_COLOR = 1;
         actionNewGame(getBoardSize());
     }
 
@@ -1416,6 +1437,8 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if (file == null)
             return;
         actionOpenFile(file);
+        // update clock
+        FILE_OPENED = true;
     }
 
     public void actionOpenFile(final File file)
@@ -1898,6 +1921,14 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             INVERT_COLOR = false;
         else
             INVERT_COLOR = true;
+    }
+
+    public void actionToggleBeep()
+    {
+        if (TOGGLE_BEEP)
+            TOGGLE_BEEP = false;
+        else
+            TOGGLE_BEEP = true;
     }
 
     public void actionToggleBeepAfterMove()
@@ -3863,9 +3894,21 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         {
             try
             {
-                ConstGameInfo info = getGameInfo();
-                m_gtp.initSynchronize(getBoard(), info.getKomi(),
-                        info.getTimeSettings());
+                if(FILE_OPENED)
+                {
+                    FILE_OPENED = false;
+
+                    Komi komi = new Komi(7.5);
+                    m_game.setTimeSettings(m_timeSettings);
+                    m_gtp.initSynchronize(getBoard(), komi, m_timeSettings);
+                }
+                else
+                {
+                    ConstGameInfo info = getGameInfo();
+                    m_gtp.initSynchronize(getBoard(), info.getKomi(),
+                            info.getTimeSettings());
+                }
+
             }
             catch (GtpError error)
             {
@@ -4513,7 +4556,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.2");
+            setTitle(appName + " 1.0.3");
         else
         {
             String name = getProgramLabel();

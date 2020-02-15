@@ -8,12 +8,15 @@ import net.sf.gogui.go.GenericBoard;
 import net.sf.gogui.go.Board;
 import net.sf.gogui.go.GoColor;
 import static net.sf.gogui.go.GoColor.EMPTY;
+import static net.sf.gogui.go.GoColor.BLACK;
+import static net.sf.gogui.go.GoColor.WHITE;
 import net.sf.gogui.go.GoPoint;
 import net.sf.gogui.go.Komi;
 import net.sf.gogui.go.Move;
 import net.sf.gogui.gtp.GtpClientBase;
 import net.sf.gogui.gtp.GtpError;
 import net.sf.gogui.util.ObjectUtil;
+import static net.sf.gogui.gogui.GoGui.COMPUTER_COLOR;
 
 /** Manages a tree, board, current node and clock. */
 public class Game
@@ -376,7 +379,16 @@ public class Game
 
     public void startClock()
     {
-        m_clock.startMove(getToMove());
+        GoColor c =  getToMove();
+
+        // black
+        if(COMPUTER_COLOR == 0 && c == BLACK)
+            return;
+        // white 
+        else if(COMPUTER_COLOR == 1 && c == WHITE)
+            return;
+
+        m_clock.startMove(c);
         m_clockNode = m_current;
     }
 
