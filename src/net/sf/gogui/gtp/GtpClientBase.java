@@ -325,6 +325,7 @@ public abstract class GtpClientBase
         Note: call queryProtocolVersion first */
     public void sendPlay(Move move) throws GtpError
     {
+        // send("check_best_winrate"); // additional information 
         send(getCommandPlay(move));
     }
 
