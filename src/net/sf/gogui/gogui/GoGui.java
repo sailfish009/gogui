@@ -4556,7 +4556,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.3");
+            setTitle(appName + " 1.0.4");
         else
         {
             String name = getProgramLabel();

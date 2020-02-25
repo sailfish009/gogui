@@ -61,7 +61,7 @@ public final class GameInfoDialog
         public JTextField m_rank;
     }
 
-    private TimeField m_byoyomi;
+    private TimeField2 m_byoyomi;
 
     private JTextField m_byoyomiMoves;
 
@@ -163,7 +163,7 @@ public final class GameInfoDialog
 
         panel.add(m_preByoyomi);
         panel.add(new JLabel(" + "));
-        m_byoyomi = new TimeField(2, "TT_GAMEINFO_TIME_BYOYOMI");
+        m_byoyomi = new TimeField2(2, "TT_GAMEINFO_TIME_BYOYOMI");
         if (timeSettings != null && timeSettings.getUseByoyomi())
             m_byoyomi.setTime(timeSettings.getByoyomi());
         else
@@ -368,6 +368,93 @@ public final class GameInfoDialog
         }
         return true;
     }
+}
+
+class TimeField2
+    extends Box
+{
+    // See comment at m_comboBox
+    @SuppressWarnings("unchecked")
+    public TimeField2(int cols, String toolTipText)
+    {
+        super(BoxLayout.Y_AXIS);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        add(Box.createVerticalGlue());
+        add(panel);
+        add(Box.createVerticalGlue());
+        m_textField = new JTextField(cols);
+        m_textField.setHorizontalAlignment(JTextField.RIGHT);
+        m_textField.setToolTipText(i18n(toolTipText));
+        panel.add(m_textField);
+        panel.add(GuiUtil.createSmallFiller());
+
+        String[] units = { i18n("LB_GAMEINFO_SEC") };
+        m_comboBox = new JComboBox(units);
+        panel.add(m_comboBox);
+    }
+
+    public boolean isEmpty()
+    {
+        return m_textField.getText().trim().equals("");
+    }
+
+    public long getTime()
+    {
+        try
+        {
+            long units;
+            units = 1000;
+            return units * Long.parseLong(m_textField.getText().trim());
+        }
+        catch (NumberFormatException e)
+        {
+            return 0;
+        }
+    }
+
+    public void setTime(long millis)
+    {
+        long seconds = millis / 1000L;
+        m_textField.setText(Long.toString(seconds));
+        m_comboBox.setSelectedIndex(0);
+    }
+
+    public boolean validateTime(Component parent,
+                                MessageDialogs messageDialogs)
+    {
+        try
+        {
+            if (isEmpty())
+                return true;
+            int value = Integer.parseInt(m_textField.getText().trim());
+            if (value < 0)
+            {
+                messageDialogs.showError(parent,
+                                      i18n("MSG_GAMEINFO_INVALID_TIME"),
+                                      i18n("MSG_GAMEINFO_NO_POSITIVE_NUMBER"),
+                                      false);
+                return false;
+            }
+        }
+        catch (NumberFormatException e)
+        {
+                messageDialogs.showError(parent,
+                                         i18n("MSG_GAMEINFO_INVALID_TIME"),
+                                         i18n("MSG_GAMEINFO_NO_NUMBER"),
+                                         false);
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean m_only_second=false;
+
+    private final JTextField m_textField;
+
+    /** @note JComboBox is a generic type since Java 7. We use a raw type
+        and suppress unchecked warnings where needed to be compatible with
+        earlier Java versions. */
+    private final JComboBox m_comboBox;
 }
 
 class TimeField
