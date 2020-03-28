@@ -3975,12 +3975,14 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         // the window visible, but not draw the window content yet
         getLayeredPane().setVisible(false);
         setVisible(true);
-        if (m_programCommand != null)
-        {
-            attachProgram(m_programCommand, m_program, m_register, false);
-            if (m_gtp == null || m_gtp.isProgramDead())
-                m_prefs.putInt("program", -1);
-        }
+        // 202003 disable attach when program start
+	// if (m_programCommand != null)
+        // {
+        //     attachProgram(m_programCommand, m_program, m_register, false);
+        //     if (m_gtp == null || m_gtp.isProgramDead())
+        //         m_prefs.putInt("program", -1);
+        // }
+
         setTitle();
         registerSpecialMacHandler();
         // Children dialogs should be set visible after main window, otherwise
@@ -4556,7 +4558,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.4");
+            setTitle(appName + " 1.0.6");
         else
         {
             String name = getProgramLabel();
