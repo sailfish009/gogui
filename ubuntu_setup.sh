@@ -11,6 +11,8 @@ cd -
 
 mkdir -p lib
 cd lib
+cp ../custom/*.txt .
+cp ../custom/run.sh .
 cp /tmp/Quaqua/dist/quaqua.jar .
 cd -
 
