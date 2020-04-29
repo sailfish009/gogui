@@ -140,6 +140,9 @@ import net.sf.gogui.version.Version;
 import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
 import static net.sf.gogui.gogui.GoGui.TOGGLE_BEEP;
 import static net.sf.gogui.gogui.GoGui.COMPUTER_COLOR;
+import static net.sf.gogui.gogui.GoGui.PAIR_PLAY;
+import static net.sf.gogui.gogui.GoGui.PAIR_NUMBER;
+import static net.sf.gogui.gogui.GoGui.PAIR_ORDER;
 
 /** Graphical user interface to a Go program. */
 public class GoGui
@@ -173,13 +176,17 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     public static boolean TOGGLE_BEEP = true;
     public static boolean BACKWARD_CLICKED = false;
     public static boolean FILE_OPENED = false;
-    public static int COMPUTER_COLOR = 1; //  0: black,  1: white, 2: none, 3: both
+    public static int COMPUTER_COLOR = 0; //  0: black,  1: white, 2: none, 3: both
+    public static boolean PAIR_PLAY = false;
+    public static int PAIR_NUMBER = 4;     // if player 2, then number 4 ( 2 x 2 ), player 3, number 6 ( 3 x 2 )
+    public static int PAIR_ORDER = 1;     // if pair number 4, order can be 1 or 2 or 3 or 4
+    private static int STONE_COUNT = 1;
 
     public GoGui(String program, File file, int move, String time,
                  boolean verbose, boolean initComputerColor,
                  boolean computerBlack, boolean computerWhite, boolean auto,
                  boolean register, String gtpFile, String gtpCommand,
-                 File analyzeCommandsFile)
+                 File analyzeCommandsFile, String pair)
         throws GtpError, ErrorMessage
     {
         int boardSize = m_prefs.getInt("boardsize", GoPoint.DEFAULT_SIZE);
@@ -190,21 +197,74 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         m_analyzeCommandsFile = analyzeCommandsFile;
         m_move = move;
         m_register = register;
-        if (initComputerColor)
+
+        // use pair or not, computer color, pair number, pair order
+        if (pair != null)
         {
-            m_computerBlack = computerBlack;
-            m_computerWhite = computerWhite;
+            String[] parts = pair.split(",");
+            int TEMP_USE_PAIR = 0;
+            try
+            {
+                TEMP_USE_PAIR = Integer.parseInt(parts[0]);
+                COMPUTER_COLOR = Integer.parseInt(parts[1]);
+                PAIR_NUMBER = Integer.parseInt(parts[2]) * 2;
+                PAIR_ORDER = Integer.parseInt(parts[3]);
+                System.out.println("Pair number: " + PAIR_NUMBER + ", order: " + PAIR_ORDER );
+            }
+            catch(NumberFormatException e)
+            {
+                COMPUTER_COLOR = 2;
+                TEMP_USE_PAIR = 0;
+                PAIR_NUMBER = 4;
+                PAIR_ORDER = 1;
+            }
+
+            if(TEMP_USE_PAIR != 0)
+            {
+                PAIR_PLAY = true;
+                if(COMPUTER_COLOR == 0)
+                {
+                    m_computerBlack = true;
+                    m_computerWhite = false;
+                }
+                else if(COMPUTER_COLOR == 1)
+                {
+                    m_computerBlack = false;
+                    m_computerWhite = true;
+                }
+                else if(COMPUTER_COLOR == 2)
+                {
+                    m_computerBlack = false;
+                    m_computerWhite = false;
+                }
+                else
+                {
+                    m_computerBlack = true;
+                    m_computerWhite = true;
+                }
+            }
+            else
+            {
+                PAIR_PLAY = false;
+                if (initComputerColor)
+                {
+                    m_computerBlack = computerBlack;
+                    m_computerWhite = computerWhite;
+                }
+                else if (m_prefs.getBoolean("computer-none", false))
+                {
+                    m_computerBlack = false;
+                    m_computerWhite = false;
+                }
+                else
+                {
+                    m_computerBlack = false;
+                    m_computerWhite = true;
+                }
+            }
+
         }
-        else if (m_prefs.getBoolean("computer-none", false))
-        {
-            m_computerBlack = false;
-            m_computerWhite = false;
-        }
-        else
-        {
-            m_computerBlack = false;
-            m_computerWhite = true;
-        }
+
         m_auto = auto;
         m_verbose = verbose;
         m_showInfoPanel = true;
@@ -2843,6 +2903,18 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             createAnalyzeDialog();
         toFrontLater();
         updateViews(false);
+
+        // BLACK
+        if(PAIR_PLAY && COMPUTER_COLOR == 0)
+        {
+            actionComputerColor(true, false);
+        }
+        // WHITE
+        else if(PAIR_PLAY && COMPUTER_COLOR == 1)
+        {
+            actionComputerColor(false, true);
+        }
+
         return true;
     }
     
@@ -3150,7 +3222,11 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             resetBoard();
             clearStatus();
             if (doCheckComputerMove)
+            {
+                STONE_COUNT += 1;
+                // System.out.println("STONE_COUNT: " + STONE_COUNT);
                 checkComputerMove();
+            }
         }
     }
 
@@ -3454,10 +3530,32 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
 
     private boolean computerToMove()
     {
-        if (getToMove() == BLACK)
-            return m_computerBlack;
+        // pair game
+        if(PAIR_PLAY)
+        {
+            // System.out.println("STONE_COUNT: " + STONE_COUNT);
+            // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+            // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+            int stone_count = STONE_COUNT % PAIR_NUMBER;
+            if (stone_count == PAIR_ORDER)
+            {
+                // System.out.println("computerToMove: true");
+                return true;
+            }
+            else
+            {
+                // System.out.println("computerToMove: false");
+                return false;
+            }
+        }
         else
-            return m_computerWhite;
+        {
+            // orig
+            if (getToMove() == BLACK)
+                return m_computerBlack;
+            else
+                return m_computerWhite;
+        }
     }
 
     private void createAnalyzeDialog()
@@ -4558,7 +4656,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.6");
+            setTitle(appName + " 1.0.7");
         else
         {
             String name = getProgramLabel();

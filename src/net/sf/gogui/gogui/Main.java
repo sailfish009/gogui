@@ -179,6 +179,20 @@ public final class Main
                         {}
 
 
+                        if(os_name.startsWith("Windows"))
+                            file_path = current_dir + "\\pair.txt";
+                        else
+                            file_path = current_dir + "/pair.txt";
+
+                        String m_pair = null;
+                        try
+                        {
+                            m_pair = read_timesettings(file_path);
+                        }
+                        catch(IOException e)
+                        {}
+
+
                         new GoGui(settings.m_program, settings.m_file,
                                   settings.m_move, m_time,
                                   settings.m_verbose,
@@ -188,7 +202,8 @@ public final class Main
                                   settings.m_register, settings.m_gtpFile,
                                   settings.m_gtpCommand,
                                //  settings.m_rules,
-                                  settings.m_analyzeCommands);
+                                  settings.m_analyzeCommands,
+                                  m_pair);
 
                         // orig
                         // new GoGui(settings.m_program, settings.m_file,
