@@ -181,6 +181,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     public static int PAIR_NUMBER = 4;     // if player 2, then number 4 ( 2 x 2 ), player 3, number 6 ( 3 x 2 )
     public static int PAIR_ORDER = 1;     // if pair number 4, order can be 1 or 2 or 3 or 4
     private static int STONE_COUNT = 1;
+    public static boolean SKIP_COUNT = true;
 
     public GoGui(String program, File file, int move, String time,
                  boolean verbose, boolean initComputerColor,
@@ -3223,9 +3224,21 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             clearStatus();
             if (doCheckComputerMove)
             {
-                STONE_COUNT += 1;
-                // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                checkComputerMove();
+                if(PAIR_PLAY)
+                {
+                    if( SKIP_COUNT && (PAIR_ORDER == PAIR_NUMBER) && COMPUTER_COLOR == 1)
+                    {
+                        SKIP_COUNT = false;
+                        return;
+                    }
+                    STONE_COUNT += 1;
+                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                    checkComputerMove();
+                }
+                else
+                {
+                    checkComputerMove();
+                }
             }
         }
     }
@@ -3533,19 +3546,48 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         // pair game
         if(PAIR_PLAY)
         {
-            // System.out.println("STONE_COUNT: " + STONE_COUNT);
-            // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-            // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-            int stone_count = STONE_COUNT % PAIR_NUMBER;
-            if (stone_count == PAIR_ORDER)
+            // black stone
+            if(COMPUTER_COLOR == 0)
             {
-                // System.out.println("computerToMove: true");
-                return true;
+                int stone_count = STONE_COUNT % PAIR_NUMBER;
+                // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+                // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+                // System.out.println("stone_count: " + stone_count);
+                if (stone_count == PAIR_ORDER)
+                {
+                    // System.out.println("computerToMove: true");
+                    return true;
+                }
+                else
+                {
+                    // System.out.println("computerToMove: false");
+                    return false;
+                }
             }
+            // white stone
             else
             {
-                // System.out.println("computerToMove: false");
-                return false;
+                int stone_count = STONE_COUNT % PAIR_NUMBER;
+                // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+                // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+                // System.out.println("stone_count: " + stone_count);
+                if ( (PAIR_ORDER != PAIR_NUMBER) && (stone_count == PAIR_ORDER) )
+                {
+                    // System.out.println("computerToMove: true");
+                    return true;
+                }
+                else if ( (PAIR_ORDER == PAIR_NUMBER) && (stone_count + 1) == PAIR_ORDER)
+                {
+                    // System.out.println("computerToMove: true");
+                    return true;
+                }
+                else
+                {
+                    // System.out.println("computerToMove: false");
+                    return false;
+                }
             }
         }
         else
@@ -4656,7 +4698,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.7");
+            setTitle(appName + " 1.0.8");
         else
         {
             String name = getProgramLabel();
