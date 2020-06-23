@@ -518,6 +518,11 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         {
             // System.out.println("BACKWARD_CLICKED");
             BACKWARD_CLICKED = true;
+
+            if(PAIR_PLAY)
+            {
+                STONE_COUNT -= 1;
+            }
         }
 
         boolean protectGui = (m_gtp != null
@@ -1332,7 +1337,15 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     public void actionNewGame()
     {
         // default computer color: white
-        COMPUTER_COLOR = 1;
+        if(PAIR_PLAY)
+        {
+            SKIP_COUNT = true;
+            STONE_COUNT = 1;
+        }
+        else
+        {
+            COMPUTER_COLOR = 1;
+        }
         actionNewGame(getBoardSize());
     }
 
