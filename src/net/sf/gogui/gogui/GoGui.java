@@ -143,6 +143,7 @@ import static net.sf.gogui.gogui.GoGui.COMPUTER_COLOR;
 import static net.sf.gogui.gogui.GoGui.PAIR_PLAY;
 import static net.sf.gogui.gogui.GoGui.PAIR_NUMBER;
 import static net.sf.gogui.gogui.GoGui.PAIR_ORDER;
+import static net.sf.gogui.gogui.GoGui.PAIR_HANDICAP;
 
 /** Graphical user interface to a Go program. */
 public class GoGui
@@ -176,10 +177,11 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     public static boolean TOGGLE_BEEP = true;
     public static boolean BACKWARD_CLICKED = false;
     public static boolean FILE_OPENED = false;
-    public static int COMPUTER_COLOR = 0; //  0: black,  1: white, 2: none, 3: both
-    public static boolean PAIR_PLAY = false;
-    public static int PAIR_NUMBER = 4;     // if player 2, then number 4 ( 2 x 2 ), player 3, number 6 ( 3 x 2 )
-    public static int PAIR_ORDER = 1;     // if pair number 4, order can be 1 or 2 or 3 or 4
+    public static int COMPUTER_COLOR = 1;        //  0: black,  1: white, 2: none, 3: both
+    public static boolean PAIR_PLAY = false;     // use pair go game
+    public static boolean PAIR_HANDICAP = false; // handicap game
+    public static int PAIR_NUMBER = 4;           // if player 2, then number 4 ( 2 x 2 ), player 3, number 6 ( 3 x 2 )
+    public static int PAIR_ORDER = 1;            // if pair number 4, order can be 1 or 2 or 3 or 4
     private static int STONE_COUNT = 1;
     public static boolean SKIP_COUNT = true;
 
@@ -207,14 +209,12 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             try
             {
                 TEMP_USE_PAIR = Integer.parseInt(parts[0]);
-                COMPUTER_COLOR = Integer.parseInt(parts[1]);
-                PAIR_NUMBER = Integer.parseInt(parts[2]) * 2;
-                PAIR_ORDER = Integer.parseInt(parts[3]);
+                PAIR_NUMBER = Integer.parseInt(parts[1]);
+                PAIR_ORDER = Integer.parseInt(parts[2]);
                 System.out.println("Pair number: " + PAIR_NUMBER + ", order: " + PAIR_ORDER );
             }
             catch(NumberFormatException e)
             {
-                COMPUTER_COLOR = 2;
                 TEMP_USE_PAIR = 0;
                 PAIR_NUMBER = 4;
                 PAIR_ORDER = 1;
@@ -223,49 +223,27 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             if(TEMP_USE_PAIR != 0)
             {
                 PAIR_PLAY = true;
-                if(COMPUTER_COLOR == 0)
-                {
-                    m_computerBlack = true;
-                    m_computerWhite = false;
-                }
-                else if(COMPUTER_COLOR == 1)
-                {
-                    m_computerBlack = false;
-                    m_computerWhite = true;
-                }
-                else if(COMPUTER_COLOR == 2)
-                {
-                    m_computerBlack = false;
-                    m_computerWhite = false;
-                }
-                else
-                {
-                    m_computerBlack = true;
-                    m_computerWhite = true;
-                }
             }
             else
             {
                 PAIR_PLAY = false;
-                if (initComputerColor)
-                {
-                    m_computerBlack = computerBlack;
-                    m_computerWhite = computerWhite;
-                }
-                else if (m_prefs.getBoolean("computer-none", false))
-                {
-                    m_computerBlack = false;
-                    m_computerWhite = false;
-                }
-                else
-                {
-                    m_computerBlack = false;
-                    m_computerWhite = true;
-                }
             }
-
         }
-
+        if (initComputerColor)
+        {
+            m_computerBlack = computerBlack;
+            m_computerWhite = computerWhite;
+        }
+        else if (m_prefs.getBoolean("computer-none", false))
+        {
+            m_computerBlack = false;
+            m_computerWhite = false;
+        }
+        else
+        {
+            m_computerBlack = false;
+            m_computerWhite = true;
+        }
         m_auto = auto;
         m_verbose = verbose;
         m_showInfoPanel = true;
@@ -1001,7 +979,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         actionGotoNode(NodeUtil.forward(getCurrentNode(), n), protectGui);
     }
 
-    private static void write_timesettings(String path, String time) throws IOException
+    private static void write_settings(String path, String time) throws IOException
     {
         FileWriter fw = new FileWriter(path);
         fw.write(time);
@@ -1050,7 +1028,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
 
                 try
                 {
-                    write_timesettings(file_path, output);
+                    write_settings(file_path, output);
                 }
                 catch(IOException e)
                 {
@@ -1067,13 +1045,70 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
 
                 try
                 {
-                    write_timesettings(file_path, output);
+                    write_settings(file_path, output);
                 }
                 catch(IOException e)
                 {
                 }
             }
         }
+
+        {
+            if(PAIR_PLAY)
+            {
+                if(PAIR_HANDICAP)
+                {
+                    if(PAIR_ORDER % 2 == 0)
+                        COMPUTER_COLOR = 0;
+                    else
+                        COMPUTER_COLOR = 1;
+                }
+                else
+                {
+                    if(PAIR_ORDER % 2 == 0)
+                        COMPUTER_COLOR = 1;
+                    else
+                        COMPUTER_COLOR = 0;
+                }
+            }
+            
+            String file_path = null;
+            String os_name = System.getProperty("os.name");
+            String current_dir = System.getProperty("user.dir");
+
+            if(os_name.startsWith("Windows"))
+                file_path = current_dir + "\\pair.txt";
+            else
+                file_path = current_dir + "/pair.txt";
+
+            String output = String.format("%d,%d,%d\n", PAIR_PLAY ? 1 : 0, PAIR_NUMBER, PAIR_ORDER);
+
+            try
+            {
+                write_settings(file_path, output);
+            }
+            catch(IOException e)
+            {
+            }
+        }
+
+        if(PAIR_PLAY)
+        {
+            // BLACK
+            if(COMPUTER_COLOR == 0)
+                actionComputerColor(true, false);
+            // WHITE
+            else if (COMPUTER_COLOR == 1)
+                actionComputerColor(false, true);
+
+            m_actions.updateComputerColor();
+        }
+
+        System.out.println("PAIR_PLAY: " + PAIR_PLAY);
+        System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+        System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+        System.out.println("PAIR_HANDICAP: " + PAIR_HANDICAP);
+
         setTitle();
         updateViews(false);
     }
@@ -2918,17 +2953,6 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         toFrontLater();
         updateViews(false);
 
-        // BLACK
-        if(PAIR_PLAY && COMPUTER_COLOR == 0)
-        {
-            actionComputerColor(true, false);
-        }
-        // WHITE
-        else if(PAIR_PLAY && COMPUTER_COLOR == 1)
-        {
-            actionComputerColor(false, true);
-        }
-
         return true;
     }
     
@@ -3239,10 +3263,14 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
             {
                 if(PAIR_PLAY)
                 {
-                    if( SKIP_COUNT && (PAIR_ORDER == PAIR_NUMBER) && COMPUTER_COLOR == 1)
+                    if( SKIP_COUNT && (PAIR_ORDER == PAIR_NUMBER) )
                     {
-                        SKIP_COUNT = false;
-                        return;
+                        if( (PAIR_HANDICAP && COMPUTER_COLOR == 0) || 
+                            (PAIR_HANDICAP == false && COMPUTER_COLOR == 1) )
+                        {
+                            SKIP_COUNT = false;
+                            return;
+                        }
                     }
                     STONE_COUNT += 1;
                     // System.out.println("STONE_COUNT: " + STONE_COUNT);
@@ -3559,47 +3587,96 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         // pair game
         if(PAIR_PLAY)
         {
-            // black stone
-            if(COMPUTER_COLOR == 0)
+            if(PAIR_HANDICAP)
             {
-                int stone_count = STONE_COUNT % PAIR_NUMBER;
-                // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-                // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-                // System.out.println("stone_count: " + stone_count);
-                if (stone_count == PAIR_ORDER)
+                // white stone
+                if(COMPUTER_COLOR == 1)
                 {
-                    // System.out.println("computerToMove: true");
-                    return true;
+                    int stone_count = STONE_COUNT % PAIR_NUMBER;
+                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+                    // System.out.println("stone_count: " + stone_count);
+                    if (stone_count == PAIR_ORDER)
+                    {
+                        // System.out.println("computerToMove: true");
+                        return true;
+                    }
+                    else
+                    {
+                        // System.out.println("computerToMove: false");
+                        return false;
+                    }
                 }
+                // black stone
                 else
                 {
-                    // System.out.println("computerToMove: false");
-                    return false;
+                    int stone_count = STONE_COUNT % PAIR_NUMBER;
+                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+                    // System.out.println("stone_count: " + stone_count);
+                    if ( (PAIR_ORDER != PAIR_NUMBER) && (stone_count == PAIR_ORDER) )
+                    {
+                        // System.out.println("computerToMove: true");
+                        return true;
+                    }
+                    else if ( (PAIR_ORDER == PAIR_NUMBER) && (stone_count + 1) == PAIR_ORDER)
+                    {
+                        // System.out.println("computerToMove: true");
+                        return true;
+                    }
+                    else
+                    {
+                        // System.out.println("computerToMove: false");
+                        return false;
+                    }
                 }
             }
-            // white stone
             else
             {
-                int stone_count = STONE_COUNT % PAIR_NUMBER;
-                // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-                // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-                // System.out.println("stone_count: " + stone_count);
-                if ( (PAIR_ORDER != PAIR_NUMBER) && (stone_count == PAIR_ORDER) )
+                // black stone
+                if(COMPUTER_COLOR == 0)
                 {
-                    // System.out.println("computerToMove: true");
-                    return true;
+                    int stone_count = STONE_COUNT % PAIR_NUMBER;
+                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+                    // System.out.println("stone_count: " + stone_count);
+                    if (stone_count == PAIR_ORDER)
+                    {
+                        // System.out.println("computerToMove: true");
+                        return true;
+                    }
+                    else
+                    {
+                        // System.out.println("computerToMove: false");
+                        return false;
+                    }
                 }
-                else if ( (PAIR_ORDER == PAIR_NUMBER) && (stone_count + 1) == PAIR_ORDER)
-                {
-                    // System.out.println("computerToMove: true");
-                    return true;
-                }
+                // white stone
                 else
                 {
-                    // System.out.println("computerToMove: false");
-                    return false;
+                    int stone_count = STONE_COUNT % PAIR_NUMBER;
+                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
+                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+                    // System.out.println("stone_count: " + stone_count);
+                    if ( (PAIR_ORDER != PAIR_NUMBER) && (stone_count == PAIR_ORDER) )
+                    {
+                        // System.out.println("computerToMove: true");
+                        return true;
+                    }
+                    else if ( (PAIR_ORDER == PAIR_NUMBER) && (stone_count + 1) == PAIR_ORDER)
+                    {
+                        // System.out.println("computerToMove: true");
+                        return true;
+                    }
+                    else
+                    {
+                        // System.out.println("computerToMove: false");
+                        return false;
+                    }
                 }
             }
         }
@@ -4711,7 +4788,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.8");
+            setTitle(appName + " 1.0.9");
         else
         {
             String name = getProgramLabel();

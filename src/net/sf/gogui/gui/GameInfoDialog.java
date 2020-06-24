@@ -28,6 +28,11 @@ import net.sf.gogui.game.StringInfo;
 import net.sf.gogui.game.StringInfoColor;
 import net.sf.gogui.game.TimeSettings;
 import static net.sf.gogui.gogui.GoGui.FISCHER_RULE;
+import static net.sf.gogui.gogui.GoGui.COMPUTER_COLOR;
+import static net.sf.gogui.gogui.GoGui.PAIR_PLAY;
+import static net.sf.gogui.gogui.GoGui.PAIR_NUMBER;
+import static net.sf.gogui.gogui.GoGui.PAIR_ORDER;
+import static net.sf.gogui.gogui.GoGui.PAIR_HANDICAP;
 
 /** Dialog for editing game settings and other information. */
 public final class GameInfoDialog
@@ -75,6 +80,8 @@ public final class GameInfoDialog
 
     private TimeField m_preByoyomi;
 
+    private PairField m_pair;
+
     private final JTextField m_result;
 
     private final JTextField m_rules;
@@ -103,27 +110,40 @@ public final class GameInfoDialog
         box.add(values);
         m_result = createEntry("LB_GAMEINFO_RESULT", 12,
                                info.get(StringInfo.RESULT),
-                               "TT_GAMEINFO_RESULT", labels, values);
+                               "TT_GAMEINFO_RESULT", labels, values, 12);
         m_date = createEntry("LB_GAMEINFO_DATE", 12,
                              info.get(StringInfo.DATE),
-                             "TT_GAMEINFO_DATE", labels, values);
+                             "TT_GAMEINFO_DATE", labels, values, 12);
         m_rules = createEntry("LB_GAMEINFO_RULES", 12,
                               "Chinese", //info.get(StringInfo.RULES),
-                              "TT_GAMEINFO_RULES", labels, values);
+                              "TT_GAMEINFO_RULES", labels, values, 12);
         String komi = "";
         if (info.getKomi() != null)
             komi = info.getKomi().toString();
         m_komi = createEntry("LB_GAMEINFO_KOMI", 12, komi,
                              "TT_GAMEINFO_KOMI",
-                             labels, values);
+                             labels, values, 12);
         createTime(info.getTimeSettings(), labels, values);
+        // add pair game setting
+        createPair(labels, values);
+        
         setMessage(outerBox);
         setOptionType(OK_CANCEL_OPTION);
+        int handicap = info.getHandicap();
+        // System.out.println("handicap: " + handicap);
+        if(handicap == 0)
+        {
+            PAIR_HANDICAP = false;
+        }
+        else
+        {
+            PAIR_HANDICAP = true;
+        }
     }
 
     private JTextField createEntry(String labelText, int cols, String text,
                                    String toolTipText, JComponent labels,
-                                   JComponent values)
+                                   JComponent values, int vgap)
     {
         Box boxLabel = Box.createHorizontalBox();
         boxLabel.add(Box.createHorizontalGlue());
@@ -131,7 +151,7 @@ public final class GameInfoDialog
         label.setAlignmentY(Component.CENTER_ALIGNMENT);
         boxLabel.add(label);
         labels.add(boxLabel);
-        JPanel fieldPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel fieldPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, vgap));
         JTextField field = new JTextField(cols);
         field.setHorizontalAlignment(JTextField.CENTER);
         field.setToolTipText(i18n(toolTipText));
@@ -199,6 +219,43 @@ public final class GameInfoDialog
         boxValue.add(check_fischer);
         values.add(boxValue);
     }
+
+    private void createPair(JComponent labels,
+                            JComponent values)
+    {
+        Box boxLabel = Box.createHorizontalBox();
+        boxLabel.add(Box.createHorizontalGlue());
+        JLabel label = new JLabel("Pair: ");
+        label.setAlignmentY(Component.CENTER_ALIGNMENT);
+        boxLabel.add(label);
+        labels.add(boxLabel);
+        Box boxValue = Box.createVerticalBox();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        boxValue.add(Box.createVerticalGlue());
+        boxValue.add(panel);
+        boxValue.add(Box.createVerticalGlue());
+        m_pair = new PairField(3);
+        panel.add(m_pair);
+
+        // add pair go checkbox
+        Checkbox check_pair= new Checkbox("Pair Go", null, PAIR_PLAY);
+        check_pair.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange()==ItemEvent.SELECTED)
+                    PAIR_PLAY = true;
+                else
+                    PAIR_PLAY = false;
+            }
+        });
+
+        boxValue.add(check_pair);
+        values.add(boxValue);
+
+        m_pair.setIndex(PAIR_NUMBER);
+        m_pair.setIndex2(PAIR_ORDER);
+
+    }
+
 
     private PlayerInfo createPlayerInfo(GoColor c, GameInfo info)
     {
@@ -552,3 +609,157 @@ class TimeField
         earlier Java versions. */
     private final JComboBox m_comboBox;
 }
+
+class PairField
+    extends Box
+{
+    // See comment at m_comboBox
+    @SuppressWarnings("unchecked")
+    public PairField(int cols)
+    {
+        super(BoxLayout.Y_AXIS);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        add(Box.createVerticalGlue());
+        add(panel);
+        add(Box.createVerticalGlue());
+        m_textField = new JTextField(cols);
+        m_textField.setText("team");
+        m_textField.setHorizontalAlignment(JTextField.RIGHT);
+        panel.add(m_textField);
+        panel.add(GuiUtil.createSmallFiller());
+        String[] units = { "2:2", "3:3" };
+        m_comboBox = new JComboBox(units);
+        m_comboBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange()==ItemEvent.SELECTED)
+                {
+                    m_comboBox2.removeAllItems();
+                    Object item = e.getItem();
+                    // System.out.println("item: " + item);
+                    if (item.equals("2:2"))
+                    {
+                        m_comboBox2.insertItemAt("1",0);
+                        m_comboBox2.insertItemAt("2",1);
+                        m_comboBox2.insertItemAt("3",2);
+                        m_comboBox2.insertItemAt("4",3);
+                        PAIR_NUMBER = 4;
+                    }
+                    else if (item.equals("3:3"))
+                    {
+                        m_comboBox2.insertItemAt("1",0);
+                        m_comboBox2.insertItemAt("2",1);
+                        m_comboBox2.insertItemAt("3",2);
+                        m_comboBox2.insertItemAt("4",3);
+                        m_comboBox2.insertItemAt("5",4);
+                        m_comboBox2.insertItemAt("6",5);
+                        PAIR_NUMBER = 6;
+                    }
+                    m_comboBox2.setSelectedItem("1");
+                }
+            }
+        });
+
+        panel.add(m_comboBox);
+
+        panel.add(GuiUtil.createSmallFiller());
+        panel.add(GuiUtil.createSmallFiller());
+
+        m_textField2 = new JTextField(cols);
+        m_textField2.setText("order");
+        m_textField2.setHorizontalAlignment(JTextField.RIGHT);
+        panel.add(m_textField2);
+        panel.add(GuiUtil.createSmallFiller());
+        panel.add(GuiUtil.createSmallFiller());
+
+        if(PAIR_NUMBER == 4)
+        {
+            String[] units2 = { "1", "2", "3", "4" };
+            m_comboBox2 = new JComboBox(units2);
+        }
+        else
+        {
+            String[] units2 = { "1", "2", "3", "4", "5", "6" };
+            m_comboBox2 = new JComboBox(units2);
+        }
+
+        m_comboBox2.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange()==ItemEvent.SELECTED)
+                {
+                    Object item = e.getItem();
+                    // System.out.println("item: " + item);
+                    if (item.equals("1"))
+                    {
+                        PAIR_ORDER = 1;
+                    }
+                    else if (item.equals("2"))
+                    {
+                        PAIR_ORDER = 2;
+                    }
+                    else if (item.equals("3"))
+                    {
+                        PAIR_ORDER = 3;
+                    }
+                    else if (item.equals("4"))
+                    {
+                        PAIR_ORDER = 4;
+                    }
+                    else if (item.equals("5"))
+                    {
+                        PAIR_ORDER = 5;
+                    }
+                    else if (item.equals("6"))
+                    {
+                        PAIR_ORDER = 6;
+                    }
+                }
+            }
+        });
+
+        panel.add(m_comboBox2);
+
+    }
+
+    public boolean isEmpty()
+    {
+        return m_textField.getText().trim().equals("");
+    }
+
+    public long getTime()
+    {
+        return 0;
+    }
+
+    public void setIndex(int PAIR_NUMBER)
+    {
+        if(PAIR_NUMBER == 4)
+            m_comboBox.setSelectedItem("2:2");
+        else if(PAIR_NUMBER == 6)
+            m_comboBox.setSelectedItem("3:3");
+    }
+
+    public void setIndex2(int PAIR_ORDER)
+    {
+        if(PAIR_ORDER == 1)
+            m_comboBox2.setSelectedItem("1");
+        else if(PAIR_ORDER == 2)
+            m_comboBox2.setSelectedItem("2");
+        else if(PAIR_ORDER == 3)
+            m_comboBox2.setSelectedItem("3");
+        else if(PAIR_ORDER == 4)
+            m_comboBox2.setSelectedItem("4");
+        else if(PAIR_ORDER == 5)
+            m_comboBox2.setSelectedItem("5");
+        else if(PAIR_ORDER == 6)
+            m_comboBox2.setSelectedItem("6");
+    }
+
+    private final JTextField m_textField;
+    private final JTextField m_textField2;
+    /** @note JComboBox is a generic type since Java 7. We use a raw type
+        and suppress unchecked warnings where needed to be compatible with
+        earlier Java versions. */
+    private final JComboBox m_comboBox;
+    private final JComboBox m_comboBox2;
+}
+

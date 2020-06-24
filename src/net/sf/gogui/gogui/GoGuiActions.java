@@ -695,6 +695,22 @@ public class GoGuiActions
         m_goGui = goGui;
     }
 
+    public void updateComputerColor()
+    {
+        boolean isProgramAttached = m_goGui.isProgramAttached();
+        boolean computerBlack = m_goGui.isComputerColor(BLACK);
+        boolean computerWhite = m_goGui.isComputerColor(WHITE);
+        boolean computerBoth = (computerBlack && computerWhite);
+        m_actionComputerBlack.setEnabled(isProgramAttached);
+        m_actionComputerBlack.setSelected(computerBlack && ! computerWhite);
+        m_actionComputerBoth.setEnabled(isProgramAttached);
+        m_actionComputerBoth.setSelected(computerBoth);
+        m_actionComputerNone.setEnabled(isProgramAttached);
+        m_actionComputerNone.setSelected(! computerBlack && ! computerWhite);
+        m_actionComputerWhite.setEnabled(isProgramAttached);
+        m_actionComputerWhite.setSelected(! computerBlack && computerWhite);
+    }
+
     public void update()
     {
         ConstGame game = m_goGui.getGame();

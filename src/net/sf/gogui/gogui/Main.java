@@ -111,7 +111,7 @@ public final class Main
         component.add(filler);
     }
 
-    private static String read_timesettings(String path) throws IOException
+    private static String read_settings(String path) throws IOException
     {
         FileReader fr = new FileReader(path);
         BufferedReader br = new BufferedReader(fr);
@@ -173,7 +173,7 @@ public final class Main
                         String m_time = null;
                         try
                         {
-                            m_time = read_timesettings(file_path);
+                            m_time = read_settings(file_path);
                         }
                         catch(IOException e)
                         {}
@@ -187,7 +187,7 @@ public final class Main
                         String m_pair = null;
                         try
                         {
-                            m_pair = read_timesettings(file_path);
+                            m_pair = read_settings(file_path);
                         }
                         catch(IOException e)
                         {}
