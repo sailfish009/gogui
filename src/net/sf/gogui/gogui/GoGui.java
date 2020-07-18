@@ -182,7 +182,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
     public static boolean PAIR_HANDICAP = false; // handicap game
     public static int PAIR_NUMBER = 4;           // if player 2, then number 4 ( 2 x 2 ), player 3, number 6 ( 3 x 2 )
     public static int PAIR_ORDER = 1;            // if pair number 4, order can be 1 or 2 or 3 or 4
-    private static int STONE_COUNT = 1;
+    private static int STONE_COUNT = 0;
     public static boolean SKIP_COUNT = true;
 
     public GoGui(String program, File file, int move, String time,
@@ -492,20 +492,15 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if (! checkStateChangePossible())
             return;
 
+        boolean protectGui = (m_gtp != null
+                && (n > 1 || ! m_gtp.isSupported("undo")));
+        actionGotoNode(NodeUtil.backward(getCurrentNode(), n), protectGui);
+
         if (n == 1)
         {
             // System.out.println("BACKWARD_CLICKED");
             BACKWARD_CLICKED = true;
-
-            if(PAIR_PLAY)
-            {
-                STONE_COUNT -= 1;
-            }
         }
-
-        boolean protectGui = (m_gtp != null
-                && (n > 1 || ! m_gtp.isSupported("undo")));
-        actionGotoNode(NodeUtil.backward(getCurrentNode(), n), protectGui);
     }
 
     public void actionBeginning()
@@ -1375,7 +1370,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if(PAIR_PLAY)
         {
             SKIP_COUNT = true;
-            STONE_COUNT = 1;
+            STONE_COUNT = 0;
         }
         else
         {
@@ -3272,8 +3267,6 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
                             return;
                         }
                     }
-                    STONE_COUNT += 1;
-                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
                     checkComputerMove();
                 }
                 else
@@ -3310,6 +3303,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         if (m_gtp == null || isOutOfSync() || m_gtp.isProgramDead())
             return;
         int moveNumber = NodeUtil.getMoveNumber(getCurrentNode());
+        STONE_COUNT = moveNumber;
         boolean bothPassed = (moveNumber >= 2 && getBoard().bothPassed());
         boolean gameFinished = false;
         boolean rulerAttached = isRulerAttached();
@@ -3587,97 +3581,19 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         // pair game
         if(PAIR_PLAY)
         {
-            if(PAIR_HANDICAP)
+            int stone_count = STONE_COUNT % PAIR_NUMBER;
+            // System.out.println("STONE_COUNT: " + STONE_COUNT);
+            // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
+            // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
+            // System.out.println("stone_count: " + stone_count);
+
+            if ( stone_count == (PAIR_ORDER-1) )
             {
-                // white stone
-                if(COMPUTER_COLOR == 1)
-                {
-                    int stone_count = STONE_COUNT % PAIR_NUMBER;
-                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-                    // System.out.println("stone_count: " + stone_count);
-                    if (stone_count == PAIR_ORDER)
-                    {
-                        // System.out.println("computerToMove: true");
-                        return true;
-                    }
-                    else
-                    {
-                        // System.out.println("computerToMove: false");
-                        return false;
-                    }
-                }
-                // black stone
-                else
-                {
-                    int stone_count = STONE_COUNT % PAIR_NUMBER;
-                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-                    // System.out.println("stone_count: " + stone_count);
-                    if ( (PAIR_ORDER != PAIR_NUMBER) && (stone_count == PAIR_ORDER) )
-                    {
-                        // System.out.println("computerToMove: true");
-                        return true;
-                    }
-                    else if ( (PAIR_ORDER == PAIR_NUMBER) && (stone_count + 1) == PAIR_ORDER)
-                    {
-                        // System.out.println("computerToMove: true");
-                        return true;
-                    }
-                    else
-                    {
-                        // System.out.println("computerToMove: false");
-                        return false;
-                    }
-                }
+                return true;
             }
             else
             {
-                // black stone
-                if(COMPUTER_COLOR == 0)
-                {
-                    int stone_count = STONE_COUNT % PAIR_NUMBER;
-                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-                    // System.out.println("stone_count: " + stone_count);
-                    if (stone_count == PAIR_ORDER)
-                    {
-                        // System.out.println("computerToMove: true");
-                        return true;
-                    }
-                    else
-                    {
-                        // System.out.println("computerToMove: false");
-                        return false;
-                    }
-                }
-                // white stone
-                else
-                {
-                    int stone_count = STONE_COUNT % PAIR_NUMBER;
-                    // System.out.println("STONE_COUNT: " + STONE_COUNT);
-                    // System.out.println("PAIR_NUMBER: " + PAIR_NUMBER);
-                    // System.out.println("PAIR_ORDER: " + PAIR_ORDER);
-                    // System.out.println("stone_count: " + stone_count);
-                    if ( (PAIR_ORDER != PAIR_NUMBER) && (stone_count == PAIR_ORDER) )
-                    {
-                        // System.out.println("computerToMove: true");
-                        return true;
-                    }
-                    else if ( (PAIR_ORDER == PAIR_NUMBER) && (stone_count + 1) == PAIR_ORDER)
-                    {
-                        // System.out.println("computerToMove: true");
-                        return true;
-                    }
-                    else
-                    {
-                        // System.out.println("computerToMove: false");
-                        return false;
-                    }
-                }
+                return false;
             }
         }
         else
@@ -4788,7 +4704,7 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         else if (filename != null)
             gameName = filename;
         if (gameName == null)
-            setTitle(appName + " 1.0.9");
+            setTitle(appName + " 1.1.0");
         else
         {
             String name = getProgramLabel();
@@ -5169,6 +5085,9 @@ implements AnalyzeDialog.Listener, GuiBoard.Listener,
         getRootPane().putClientProperty("windowModified",
                 Boolean.valueOf(isModified()));
         setTitle();
+        // update stone count
+        ConstNode node = getCurrentNode();
+        STONE_COUNT = NodeUtil.getMoveNumber(node);
         GoGuiUtil.updateMoveText(m_statusBar, getGame());
         m_statusBar.setSetupMode(m_setupMode);
         if (m_setupMode)
