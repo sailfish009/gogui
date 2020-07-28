@@ -372,7 +372,9 @@ public class Game
             }
         }
         if (c != EMPTY || father != null)
+        {
             m_current.addStone(c, p);
+        }
         setModified();
         updateBoard();
     }

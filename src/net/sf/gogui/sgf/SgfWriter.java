@@ -21,6 +21,7 @@ import net.sf.gogui.go.GoColor;
 import static net.sf.gogui.go.GoColor.BLACK;
 import static net.sf.gogui.go.GoColor.WHITE;
 import static net.sf.gogui.go.GoColor.BLACK_WHITE_EMPTY;
+import static net.sf.gogui.go.GoColor.INVERT_COLOR;
 import net.sf.gogui.go.Komi;
 import net.sf.gogui.go.Move;
 import net.sf.gogui.go.GoPoint;
@@ -298,10 +299,21 @@ public class SgfWriter
         if (move != null)
         {
             String point = getPointValue(move.getPoint());
-            if (move.getColor() == BLACK)
-                print("B" + point);
+
+            if(INVERT_COLOR)
+            {
+                if (move.getColor() == BLACK)
+                    print("W" + point);
+                else
+                    print("B" + point);
+            }
             else
-                print("W" + point);
+            {
+                if (move.getColor() == BLACK)
+                    print("B" + point);
+                else
+                    print("W" + point);
+            }
         }
         for (GoColor c : BLACK_WHITE_EMPTY)
         {
